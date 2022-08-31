@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./bootstrap.css" />
+    <script src="./jquery.js"></script>
+</head>
+
+<body style="padding:15px">
+    <!-- 添加的panel面板 -->
+    <!-- 通过 bs3-panel:primary 来添加panel面板 -->
+
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h3 class="panel-title">添加新用户</h3>
+            </h3>
+        </div>
+        <!--  添加form-inline 可以让底下输入框在一行内显示 -->
+        <div class="panel-body form-inline" id="additem">
+
+            <!-- 通过 bs3-input-group:addon:text 添加 -->
+            <div class="input-group">
+                <div class="input-group-addon">用户名</div>
+                <input type="text" class="form-control" id="username" placeholder="请输入用户名">
+            </div>
+
+            <div class="input-group">
+                <div class="input-group-addon">密码</div>
+                <input type="text" class="form-control" id="password" placeholder="请输入密码">
+            </div>
+
+            <button id="btnAdd" class="btn btn-primary" style="width: 100px;">添加</button>
+
+
+
+            <div class="input-group">
+                <input type="text" class="form-control" id="iptseek" placeholder="请输入搜索项">
+            </div>
+
+            <button id="btnseek" class="btn btn-primary" style="width: 100px;">搜索</button>
+
+
+            <button id="btnFresh" class="btn btn-primary" style="width: 100px;">刷新列表</button>
+
+
+        </div>
+    </div>
+
+
+    <!-- 通过 bs3-panel:bordered 来调用 -->
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>用户名</th>
+                <th>密码</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="tb">
+        </tbody>
+
+        <script>
+            $(function () {
+                // 获取列表的数据
+                function getuserinfo() {
+                    $.get('http://192.168.1.2:8080/user/findAll', function (res) {
+                        // 当获取成功时  res.flag === true 
+                        if (res.flag === false) return alert('获取数据失败')  // 判断数据是否获取成功
+                        console.log(res.data)
+                        // let obj = JSON.parse(res.data)
+                        // console.log(obj)
+                        localStorage.setItem("data", JSON.stringify(res.data))
+                        let rows = []
+                        // 循环 所有的信息 生成一个tr 放到rows的数组里面 
+                        // href="javascript:; 防止链接跳转
+                        $.each(res.data, function (i, item) {
+                            rows.push('<tr><td>' + item.id + '</td><td>' + item.username + '</td><td>' + item.password + '</td><td><a href="javascript:;" class="del" data-id="' + item.id + '" >删除</a></td></tr>')
+                        })
+                        // 把tbody 之前的数据清空 然后添加上 rows 里面的信息
+                        $('#tb').empty().append(rows.join(''))
+                    })
+                }
+
+                getuserinfo()
+                // 后续 push 动态创建出来的a 链接 无法直接绑定点击事件 所有要借助父辈元素 thead 通过代理的方式为动态添加的元素绑定点击事件
+                // 注 ： .del 是类选择器 记得要写.
+                $('tbody').on('click', '.del', function () {
+                    let id = $(this).attr('data-id')
+                    $.post('http://192.168.1.2:8080/user/delete', { id: id }, function (res) {
+                        if (res.flag === false) return alert('删除失败！')
+                        getuserinfo()
+                    })
+                })
+                // 长度 length  取值是用 val  别再错了
+                // 本区域的功能是 把输入的图书信息 放到列表里面 同时判断以下内容是否为空 如果为空 就提示用户 .trim() 可以去除字符串两端的空格 这样比较严谨
+                $('#btnAdd').on('click', function () {
+                    let username = $('#username').val().trim()
+                    let password = $('#password').val().trim()
+                    let data = { username, password }
+                    let str = JSON.stringify(data)
+                    if (username.length <= 0 || password.length <= 0) {
+                        return alert('请填写完整的信息！')
+                    }
+                    $.ajax({
+                        type: 'POST',
+                        url: 'http://192.168.1.2:8080/user/add',
+                        data: str,
+                        contentType: 'application/json',
+                        success: function (res) {
+                            if (res.flag === false) {
+                                return alert('添加失败！')
+                            } else {
+                                getuserinfo()
+                                // 添加成功后要把文本框的值清空  可以通过 id 选择器 把他们的val值设为空字符串就好
+                                $('#username').val('')
+                                $('#password').val('')
+
+
+                            }
+                        }
+                    })
+
+                })
+                $('#username').on('keyup', function (e) {
+                    if (e.keyCode === 13) {
+                        // 14.获取发送按钮  $('#btnSend') 然后 调用click函数 等于是通过了编程的形式触发按钮的点击事件
+                        $('#btnAdd').click()
+                    }
+                })
+                $('#password').on('keyup', function (e) {
+                    if (e.keyCode === 13) {
+                        // 14.获取发送按钮  $('#btnSend') 然后 调用click函数 等于是通过了编程的形式触发按钮的点击事件
+                        $('#btnAdd').click()
+                    }
+                })
+
+
+                $('#btnseek').on('click', function () {
+                    let iptseek = $('#iptseek').val().trim()
+                    if (iptseek <= 0) {
+                        return alert('请输入完整的查找信息！')
+                    }
+                    else {
+                        $.ajax({
+                            type: 'GET',
+                            url: 'http://192.168.1.2:8080/user/select',
+                            data: { 'username': iptseek },
+                            success: function (res) {
+                                if (res.flag === false) {
+                                    // $('#tb').empty()
+                                    $('#iptseek').val('')
+                                    return alert('请输入正确的用户名')
+                                } else {
+                                    $('#iptseek').val('')
+                                    let rows = []
+                                    $.each(res.data, function (i, item) {
+                                        rows.push('<tr><td>' + item.id + '</td><td>' + item.username + '</td><td>' + item.password + '</td><td><a href="javascript:;" class="del" data-id="' + item.id + '" >删除</a></td></tr>')
+                                    })
+                                    $('#tb').empty().append(rows.join(''))
+
+
+                                }
+
+                            }
+                        })
+                    }
+
+
+
+
+                })
+
+                $('#iptseek').on('keyup', function (e) {
+                    if (e.keyCode === 13) {
+                        // 14.获取发送按钮  $('#btnSend') 然后 调用click函数 等于是通过了编程的形式触发按钮的点击事件
+                        $('#btnseek').click()
+                    }
+                })
+
+                $('#btnFresh').on('click', function (e) {
+                    getuserinfo()
+                })
+            })
+        </script>
+    </table>
+
+</body>
+
+</html>

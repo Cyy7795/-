@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="./jquery.js"></script>
+    <style>
+        div {
+            width: 450px;
+            height: 200px;
+            background-color: pink;
+            margin: 0px auto;
+            border: 2px solid #000;
+        }
+    </style>
+</head>
+<div>
+    输入您想要的用户名：<input type="text" placeholder="在这里输入您的用户名" name="username" id="username" autocomplete="off">
+    <br>
+    <br>
+    输入您要设置的密码：<input type="password" placeholder="在这里输入您的密码" name="password" id="password">
+    <br>
+    <br>
+    <br>
+    请点击对应按钮：
+    <button id="registerbut">用户注册</button>
+    <button id="logInbut">用户登录</button>
+</div>
+
+<body>
+    <script>
+
+        function qingkong() {
+            $('#username').val('')
+            $('#password').val('')
+        }
+        
+        // 用户注册
+        $('#registerbut').on('click', function () {
+            // console.log('ok')
+            let username = $('#username').val().trim()
+            let password = $('#password').val().trim()
+            // console.log(username, password)
+            let data = { username, password }
+            let str = JSON.stringify(data)
+            if (username <= 0 || password <= 0) {
+                qingkong()
+                return alert('请输入完整注册信息！')
+            } else {
+                // console.log(data)
+                $.ajax({
+                    type: 'POST',
+                    url: 'http://192.168.1.2:8080/user/add',
+                    data: str,
+                    contentType: 'application/json',
+                    success: function (res) {
+                        // console.log(res)
+                        if (res.flag) {
+                            // console.log(res)
+                            qingkong()
+                            return alert(`恭喜您：${username}，您完成了加入我们的第一步！`)
+                        } else {
+                            console.log(res.flag)
+                            qingkong()
+                            return alert('请再次确认您的登录信息！')
+
+                        }
+                    }
+                })
+            }
+
+        })
+
+        // 用户登录
+        $('#logInbut').on('click', function () {
+            // console.log('hello')
+            let username = $('#username').val().trim()
+            let password = $('#password').val().trim()
+            if (username <= 0 || password <= 0) {
+                qingkong()
+                return alert('请输入完整的登录信息！')
+            } else {
+                // console.log(data)
+                $.ajax({
+                    type: 'GET',
+                    url: 'http://192.168.1.2:8080/user/find',
+                    data: { username, password },
+                    success: function (res) {
+                        if (res.flag) {
+                            // console.log(res)
+                            qingkong()
+                            return alert(`hello！ ${username}欢迎您的到来！`)
+                        } else {
+                            console.log(res.flag)
+                            qingkong()
+                            return alert('请输入正确的登录信息！')
+
+                        }
+
+                    }
+                })
+            }
+        })
+    </script>
+</body>
+
+</html>
